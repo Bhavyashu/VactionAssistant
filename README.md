@@ -15,8 +15,9 @@
 
 1. Clone the repository: `git clone https://github.com/your-username/VacationAssistant.git`
 2. Install dependencies: `npm install`
-3. Set up your Google API credentials by following the instructions in `auth.js`.
-4. Run the application: `node app.js`
+3. Set up your Google Console and create a project follow the mentioned Notion link to get step by step guide.
+4. Get the credentials.json after setting up OAuth consent screen and Web-App Credentials. 
+5. Run the application: `node app.js`
 
 ## License
 
