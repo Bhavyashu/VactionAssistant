@@ -15,7 +15,7 @@
 
 1. Clone the repository: `git clone https://github.com/your-username/VacationAssistant.git`
 2. Install dependencies: `npm install`
-3. Set up your Google Console and create a project follow the mentioned [Notion link](https://www.notion.so/Your-Personal-Email-Assistant-APp-78c1cea93c6a497fbcd1b8cab6ff77e9?pvs=4) to get step by step guide.
+3. Set up your Google Console and create a project follow the [Notion link](https://www.notion.so/Your-Personal-Email-Assistant-APp-78c1cea93c6a497fbcd1b8cab6ff77e9?pvs=4) to get step by step guide.
 4. Get the credentials.json after setting up OAuth consent screen and Web-App Credentials. 
 5. Run the application: `node app.js`
 
