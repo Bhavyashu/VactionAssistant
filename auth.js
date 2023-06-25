@@ -19,7 +19,8 @@ const oAuth2Client = new google.auth.OAuth2(
   credentials.web.redirect_uris[0]
 );
 
-function getAccessToken() {
+function getAccessToken() { //if the accesstoken is not present it will generate it when the user authorizes themseleves
+
   return new Promise((resolve, reject) => {
     const authUrl = oAuth2Client.generateAuthUrl({
       access_type: 'offline',
@@ -28,7 +29,7 @@ function getAccessToken() {
 
     console.log('Authorize this app by visiting this URL:', authUrl);
 
-    const rl = readline.createInterface({
+    const rl = readline.createInterface({ //used for taking input and output
       input: process.stdin,
       output: process.stdout,
     });
@@ -47,11 +48,15 @@ function getAccessToken() {
     });
   });
 }
+
+
+//Once the autharization is completed store the AccessToken using fs module
 function storeToken(token) {
   fs.writeFileSync(TOKEN_PATH, JSON.stringify(token));
   console.log('Token stored in', TOKEN_PATH);
 }
 
+//if the token is not null then get the token
 function retrieveToken() {
   try {
     const token = fs.readFileSync(TOKEN_PATH);
