@@ -2,73 +2,57 @@ const { google } = require('googleapis');
 const auth = require('./auth');
 const createLabel = require('./createLabel');
 const SendReplyEmail = require('./replyGenerator');
-const fetchThreads = require('./FeatchThread');
+const fetchThreads = require('./fetchThreads');
 
-// const repliedEmails = new Set();// addition feautre: // to store the email address of each sender 
-// const threadAndEmail = new Map();// additional feature to sore ids and emailsthe threadAndEmail  key value is stored to get the email address of the person who send the email in the thread
+// const repliedEmails = new Set(); // Additional feature: to store the email address of each sender 
+// const threadAndEmail = new Map(); // Additional feature: to store IDs and emails of threads
 
-/* ============================= Imporatant Observation=====================================================================
+/* ============================= Important Observation ============================================================
 
-1) Each new conversation has a diffrent thread attached to it and we aim to reply only one automated email to a each such new conversation
-2) If a abc@gmail.com sends a message in morning saying HI and your automated reply replies to it and then again if they send and email ackowledging the reply sent then all that conversation is embbededd to a single thread ID
+1) Each new conversation has a different thread attached to it, and we aim to reply only once to each new conversation.
+2) If abc@gmail.com sends a message saying "HI" in the morning, and our automated reply replies to it, and then if they send an email acknowledging the reply, the entire conversation is embedded in a single thread ID.
+3) If abc@gmail.com sends a new email, it will be considered a different thread. So, to avoid spamming and generate only one automated reply, we use the `repliedEmails` set to keep track of the emails to which replies have been sent.
 
-3) if the abc@gmail.com sends a new Email then that would be a diffrent thread i.e if abc@gmail keeps spamming after sometime each email is considered as new thread, so to solve the spammin issue and generating only one automated reply we use RepliedEMails() set which keep notes of the emails that reply has sent to.
-
-=============================================================================================================================
+================================================================================================================
 */
 
-const threadIdSet = new Set();//this stored all the unique threadIDs that we fetch from gmailAPI 
+const threadIdSet = new Set(); // This stores all the unique thread IDs fetched from the Gmail API.
+let labelId = null; // To move the email threads to a specific label ID.
 
-let labelId = null; //to move the emails threads to that specific labelID
-
-
-//This function gets unreplied and new messages and sends them the automated reply
+/**
+ * Process unreplied threads and send them the automated reply.
+ *
+ * @param {object} gmail - The Gmail API client.
+ */
 async function processUnrepliedThreads(gmail) {
-
-  const threads = await fetchThreads(gmail, threadIdSet)//takes the gmail instance and the repliedThreads hashSet to filter out the replied threads and only get unreplied threads
-  //this above func helps to limit shallow api call fetched with only metadata about the threads not in deep.
+  const threads = await fetchThreads(gmail, threadIdSet); // Fetch unreplied threads
 
   if (threads.length === 0) {
-    console.log('No new  threads found in the inbox.');
+    console.log('No new threads found in the inbox.');
   } else {
     for (const thread of threads) {
-      //for each thread in the threads Array get we need to get to the firstMessage => beggingin of the thread get that sender info and reply them you are on vaction
-
       const threadId = thread.id;
 
-
-      /*Get the thread that hasn't been replied to */
-      //this functions does a 'deepFetch' of the particular thread and all contents, messages of the thread
-      const threadResponse = await gmail.users.threads.get({ 
+      // Get the thread that hasn't been replied to
+      const threadResponse = await gmail.users.threads.get({
         userId: 'me',
         id: threadId,
       });
 
-      const messages = threadResponse.data.messages;//messeges[] is and array that stores all the messages and it's contents in the particular thread threadID:{}
-
+      const messages = threadResponse.data.messages;
 
       if (messages.length > 0) {
-        const message = messages[0];//we teak the first message and extract necessary info like who sent this cause we need to sent them the automated vaction reply
-        
+        const message = messages[0];
         const fromEmail = message.payload.headers.find((header) => header.name === 'From').value;
-
-        /* This piece of code uses hashset to make note of all the previous replied emails adresses and if the fromEmail has already been sent a message for diffrent
-          threadId then it won't send the email even if the sender tries to contanct with a new email which creates a new thread.
-
-          if (repliedEmails.has(fromEmail)) {
-            console.log(`Email from ${fromEmail} has already been replied to. Skipping...`);
-            continue;
-          }
-        */
 
         console.log(`Replying to email thread with ID: ${threadId}`);
 
-        const replyStatus = await SendReplyEmail(gmail, fromEmail, message, threadId); //function to properly generate the reply body like MIME and sent the reply
-        
-        console.log('Reply sent:', replyStatus.data); //print the thorughout and check whether it was success or not
-        console.log(`sent a reply to ${fromEmail} from thread ${threadId}.`);
+        const replyStatus = await SendReplyEmail(gmail, fromEmail, message, threadId); // Generate and send the reply
 
-        const labelId = await createLabel(gmail); //creating Label or getLabelID
+        console.log('Reply sent:', replyStatus.data);
+        console.log(`Sent a reply to ${fromEmail} from thread ${threadId}.`);
+
+        const labelId = await createLabel(gmail); // Create or get the label ID
         await gmail.users.threads.modify({
           userId: 'me',
           id: threadId,
@@ -77,40 +61,41 @@ async function processUnrepliedThreads(gmail) {
           },
         });
 
-        threadIdSet.add(threadId); //updating the threadId sets to filter only requried threads
+        threadIdSet.add(threadId); // Update the thread ID set
 
-        /*additional feautre
-        // repliedEmails.add(fromEmail);//to enabele only one email reply irrespective of number of threads generated by the sender
-
-        // threadAndEmail.set(threadId, fromEmail); //finally note that the particular sender has been sent the reply no need of sending them again
+        /* Additional features
+        // repliedEmails.add(fromEmail); // To enable only one email reply irrespective of the number of threads generated by the sender
+        // threadAndEmail.set(threadId, fromEmail); // Note that the particular sender has been sent the reply, no need to send them again
         */
       }
     }
   }
 }
 
+/**
+ * Starts the email service by retrieving or generating the access token and initiating the Gmail API client.
+ */
 async function startEmailService() {
-  //Get the token
+  // Get the token
   const token = auth.retrieveToken();
 
-  if (token) { //if the accessToken is null or notprsent then generate one token
+  if (token) {
     auth.oAuth2Client.setCredentials(token);
   } else {
-    const authClient = await auth.getAccessToken(); //waits till the promise is completed and then set's the credentials 
-    auth.oAuth2Client.setCredentials(authClient.credentials); //after setting the credentials gmail API allows it to be used for making authorized API requests on behalf of the authenticated user.
+    const authClient = await auth.getAccessToken();
+    auth.oAuth2Client.setCredentials(authClient.credentials);
   }
 
   const gmail = google.gmail({ version: 'v1', auth: auth.oAuth2Client });
-  //Creating instance of the gmail API client will be used in fucntions
 
   setInterval(async () => {
     console.log('Fetching new unread and unreplied emails...');
     await processUnrepliedThreads(gmail);
-  }, 45000);//uses 45000ms => 45secs to re run the application and all process.
+  }, 45000); // Runs every 45 seconds to fetch new unread and unreplied emails
 }
 
 function getRandomInterval(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-startEmailService()
+startEmailService();

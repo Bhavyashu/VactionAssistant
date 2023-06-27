@@ -1,5 +1,11 @@
 let labelId = null;
-
+/**
+ * Creates a label named "VacationEmails" if it doesn't already exist and returns its ID.
+ * If the label already exists, the existing ID is returned.
+ *
+ * @param {object} gmail - The Gmail API client.
+ * @returns {string} - The ID of the "VacationEmails" label.
+ */
 async function createLabel(gmail) {
   if (labelId) {
     return labelId; // If labelId already exists, return it immediately
@@ -15,6 +21,7 @@ async function createLabel(gmail) {
     return labelId;
   }
 
+  // Create a new label with name 'VacationEmails' if it doesn't exist in your Gmail account
   const createResponse = await gmail.users.labels.create({
     userId: 'me',
     requestBody: {
@@ -30,4 +37,5 @@ async function createLabel(gmail) {
 
   return labelId;
 }
-module.exports = createLabel
+
+module.exports = createLabel;

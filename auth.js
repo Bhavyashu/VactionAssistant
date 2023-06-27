@@ -1,5 +1,3 @@
-// auth.js
-
 const { google } = require('googleapis');
 const readline = require('readline');
 const credentials = require('./credentials.json');
@@ -19,8 +17,13 @@ const oAuth2Client = new google.auth.OAuth2(
   credentials.web.redirect_uris[0]
 );
 
-function getAccessToken() { //if the accesstoken is not present it will generate it when the user authorizes themseleves
-
+/**
+ * Retrieves the access token for Gmail API.
+ * If the access token is not present, it generates it when the user authorizes themselves.
+ *
+ * @returns {Promise} - A promise that resolves to the authorized Gmail client.
+ */
+function getAccessToken() {
   return new Promise((resolve, reject) => {
     const authUrl = oAuth2Client.generateAuthUrl({
       access_type: 'offline',
@@ -29,7 +32,7 @@ function getAccessToken() { //if the accesstoken is not present it will generate
 
     console.log('Authorize this app by visiting this URL:', authUrl);
 
-    const rl = readline.createInterface({ //used for taking input and output
+    const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
     });
@@ -49,14 +52,21 @@ function getAccessToken() { //if the accesstoken is not present it will generate
   });
 }
 
-
-//Once the autharization is completed store the AccessToken using fs module
+/**
+ * Stores the access token in the file system.
+ *
+ * @param {object} token - The access token to be stored.
+ */
 function storeToken(token) {
   fs.writeFileSync(TOKEN_PATH, JSON.stringify(token));
   console.log('Token stored in', TOKEN_PATH);
 }
 
-//if the token is not null then get the token
+/**
+ * Retrieves the stored access token from the file system.
+ *
+ * @returns {object|null} - The retrieved access token, or null if not found.
+ */
 function retrieveToken() {
   try {
     const token = fs.readFileSync(TOKEN_PATH);
