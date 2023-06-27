@@ -13,7 +13,7 @@
 
 ## Usage
 
-1. Clone the repository: `git clone https://github.com/your-username/VacationAssistant.git`
+1. Clone the repository
 2. Set up your Google Console and create a project follow the [Notion link](https://www.notion.so/Your-Personal-Email-Assistant-APp-78c1cea93c6a497fbcd1b8cab6ff77e9?pvs=4#65fb19f675574f01b8cc4888bfdca925) to get step by step guide.
 3. Get the credentials.json after setting up the OAuth consent screen and Web-App Credentials. 
 4. Install dependencies: `npm install`
